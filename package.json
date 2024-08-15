@@ -1,0 +1,14 @@
+{
+  "name": "dldl",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+      "build": "bun build ./index.ts --compile --target=bun-darwin-arm64 --outfile dist/dldl"
+  }
+}
