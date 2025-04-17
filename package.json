@@ -9,6 +9,6 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-      "build": "bun build ./index.ts --compile --target=bun-darwin-arm64 --outfile dist/dldl"
+      "build": "bun build ./index.ts --compile --minify --target=bun-darwin-arm64 --outfile dist/dldl"
   }
 }

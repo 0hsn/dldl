@@ -2,103 +2,122 @@
  * download movie list from showtimebd.com
  */
 import { $ } from "bun";
-import { parseArgs} from "util"
+import { parseArgs } from "util";
+import { mkdir } from "node:fs/promises";
 
 interface UserInput {
-    dir: string
-    url: string
+  dir: string;
+  url: string;
 }
 
-function parseUserInput() : UserInput {
-    const { values } = parseArgs({
-        args: Bun.argv,
-        options: {
-          d: {
-            type: "string",
-            default: ""
-          },
-          p: {
-            type: "string",
-            default: "",
-          },
-        },
-        strict: true,
-        allowPositionals: true,
-      });
-      
-      let dir = values["d"]?.trim()
-      if (dir!.length == 0) {
-        dir = "./"
+function parseUserInput(): UserInput {
+  const { values } = parseArgs({
+    args: Bun.argv,
+    options: {
+      d: {
+        type: "string",
+        default: "",
+      },
+      p: {
+        type: "string",
+        default: "",
+      },
+    },
+    strict: true,
+    allowPositionals: true,
+  });
+
+  let dir = values["d"]?.trim();
+  if (dir!.length == 0) {
+    dir = "./";
+  }
+
+  let url = values["p"]?.trim();
+  if (url!.length == 0) {
+    console.log(`usage: `);
+    process.exit(1);
+  }
+
+  return { dir: dir!, url: url! };
+}
+
+async function getUrlContent(url: string): Promise<string> {
+  const response = await fetch(url);
+  return await response.text();
+}
+
+async function getLinksForHtml(html: string): Promise<string[]> {
+  let listOfMovies: string[] = [];
+  const rewriter = new HTMLRewriter();
+
+  rewriter.on("a", {
+    element(el) {
+      const href = el.getAttribute("href");
+      if (!href?.startsWith("..")) {
+        listOfMovies.push(href!);
       }
-     
-      let url = values["p"]?.trim()
-      if (url!.length == 0) {
-        console.log(`usage: `)
-        process.exit(1)
+    },
+  });
+
+  rewriter.transform(new Response(html));
+  return listOfMovies;
+}
+
+function prepareListOfMovieURLs(
+  baseURL: string,
+  listOfMovies: string[]
+): string[] {
+  let newListOfMovies: string[] = [];
+
+  if (listOfMovies.length > 0) {
+    for (let index in listOfMovies) {
+      if (!listOfMovies[index].startsWith("/")) {
+        let fullPath = baseURL;
+        if (!baseURL.endsWith("/")) fullPath += "/";
+        fullPath += listOfMovies[index];
+
+        newListOfMovies.push(fullPath);
       }
-
-      return {dir: dir!, url: url!}
-}
-
-async function getUrlContent(url: string) : Promise<string> {
-    const response = await fetch(url)
-    return await response.text()
-}
-
-async function getLinksForHtml(html: string) : Promise<string[]> {
-    let listOfMovies: string[] = []
-    const rewriter = new HTMLRewriter();
-
-    rewriter.on("a", {
-      element(el) {
-        const href = el.getAttribute("href")
-        if (!href?.startsWith("..")) {
-            listOfMovies.push(href!)
-        }
-      }
-    })
-
-    rewriter.transform(new Response(html));
-    return listOfMovies
-}
-
-function prepareListOfMovieURLs(baseURL: string, listOfMovies: string[]) : string[] {
-    let newListOfMovies: string[] = []
-
-    if (listOfMovies.length > 0) {
-        for (let index in listOfMovies) {
-            if (!listOfMovies[index].startsWith("/")) {
-                let fullPath = baseURL
-                if (!baseURL.endsWith("/"))
-                    fullPath += "/"
-                fullPath += listOfMovies[index]
-
-                newListOfMovies.push(fullPath)
-            }
-        }
     }
+  }
 
-    return newListOfMovies
+  return newListOfMovies;
 }
 
-async function downloadFileSequentially(baseOutDir: string, listOfMovies: string[]) : Promise<void> {
-    if (listOfMovies.length > 0) {
-        for (let movie of listOfMovies) {
-            console.log("::", "=".repeat(20), "::")
-            console.log("::", "Downloading >", movie)
-            await $`(cd ${baseOutDir} && curl ${movie} -O --retry 999 --retry-max-time 0 -C -)`
-        }
+async function downloadFileSequentially(
+  baseOutDir: string,
+  listOfMovies: string[]
+): Promise<void> {
+  if (listOfMovies.length > 0) {
+    for (let movie of listOfMovies) {
+      console.log("::", "=".repeat(20), "::");
+      console.log("::", "Downloading >", movie);
+      await $`(cd ${baseOutDir} && curl ${movie} -O --retry 999 --retry-max-time 0 -C -)`;
     }
+  }
 }
 
-const ui = parseUserInput()
+async function createDirIfNotExists(ui: UserInput) {
+  const dirExists = await Bun.file(ui.dir).exists();
 
-console.log("Downloading from:", ui.url)
-console.log("Saving to:", ui.dir)
+  if (!dirExists) {
+    await mkdir(ui.dir, { recursive: true });
+  }
+}
 
-const html = await getUrlContent(ui.url)
+async function main() {
+  const ui = parseUserInput();
+  await createDirIfNotExists(ui);
 
-let lom = await getLinksForHtml(html)
-lom = prepareListOfMovieURLs(ui.url, lom)
+  console.log("Downloading from:", ui.url);
+  console.log("Saving to:", ui.dir);
 
-await downloadFileSequentially(ui.dir, lom)
+  const html = await getUrlContent(ui.url);
+
+  let lom = await getLinksForHtml(html);
+  lom = prepareListOfMovieURLs(ui.url, lom);
+
+  await downloadFileSequentially(ui.dir, lom);
+}
+
+main();
