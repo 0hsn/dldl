@@ -1,0 +1,36 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@b-fuze/deno-dom@*": "0.1.49",
+    "jsr:@std/cli@*": "1.0.18",
+    "jsr:@std/fs@*": "1.0.17",
+    "npm:@types/node@*": "22.15.15"
+  },
+  "jsr": {
+    "@b-fuze/deno-dom@0.1.49": {
+      "integrity": "45c40175fdd1e74ab2d4b54c4fdaabbad6e5b76ee28df12a48e076b3fa7901a9"
+    },
+    "@std/cli@1.0.18": {
+      "integrity": "33846eab6a7cac52156cc105a798451df06965693606e4668adfe0436a155fd7"
+    },
+    "@std/fs@1.0.17": {
+      "integrity": "1c00c632677c1158988ef7a004cb16137f870aafdb8163b9dce86ec652f3952b"
+    }
+  },
+  "npm": {
+    "@types/node@22.15.15": {
+      "integrity": "sha512-R5muMcZob3/Jjchn5LcO8jdKwSCbzqmPB6ruBxMcf9kbxtniZHP327s6C37iOfuw8mbKK3cAQa7sEl7afLrQ8A==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
+    "undici-types@6.21.0": {
+      "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/assert@1"
+    ]
+  }
+}
